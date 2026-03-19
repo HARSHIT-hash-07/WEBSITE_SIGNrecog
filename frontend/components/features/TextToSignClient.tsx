@@ -55,7 +55,7 @@ export function TextToSignClient() {
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Search Section */}
       <div className="flex-1 space-y-4">
-        <div className="card h-full min-h-100 flex flex-col">
+        <div className="card h-full flex flex-col">
           <h2 className="text-xl font-semibold mb-4 text-white">Search Sign Videos</h2>
           
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -99,7 +99,7 @@ export function TextToSignClient() {
               </h3>
             </div>
             
-            <div className="flex-1 overflow-y-auto max-h-[400px] p-2">
+            <div className="flex-1 overflow-y-auto p-2">
               {loading ? (
                  <div className="flex justify-center items-center h-32">
                    <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
@@ -107,7 +107,7 @@ export function TextToSignClient() {
               ) : hasSearched && results.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-500 h-full">
                   <Search className="w-8 h-8 mb-3 opacity-20" />
-                  <p>No videos found matching "{inputText}".</p>
+                  <p>No videos found matching &quot;{inputText}&quot;.</p>
                   <p className="text-sm mt-1">Try a different date or keyword.</p>
                 </div>
               ) : hasSearched ? (
@@ -150,7 +150,7 @@ export function TextToSignClient() {
 
       {/* Video Player Section */}
       <div className="flex-1 space-y-4">
-        <div className="card h-full min-h-100 flex flex-col">
+        <div className="card h-full flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-white">Sign Animation</h2>
             {selectedVideo && (
@@ -160,7 +160,7 @@ export function TextToSignClient() {
             )}
           </div>
 
-          <div className="flex-1 min-h-[400px] relative rounded-lg overflow-hidden bg-black/40 border border-zinc-800/50 flex items-center justify-center shadow-inner">
+          <div className="flex-1 relative rounded-lg overflow-hidden bg-black/40 border border-zinc-800/50 flex items-center justify-center shadow-inner">
             {selectedVideo ? (
               <video
                 key={selectedVideo} // Forces video to reload when source changes

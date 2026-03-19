@@ -71,6 +71,12 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Configure model path (Optional)
+# The API expects the model folder at `../sign_idd_model_20260121_171210` by default.
+# You can change this by editing `config.py` in the sign-idd-api folder 
+# or by setting the environment variable:
+# export MODEL_DIR="/path/to/your/custom_model_folder"
+
 # Start the API on a separate port (e.g., 8001) to avoid conflicts
 uvicorn main:app --reload --port 8001
 ```
@@ -78,7 +84,7 @@ uvicorn main:app --reload --port 8001
 ---
 
 ## Important Notes
-- **Model Files:** The `/sign_idd_model_20...` directory contains heavy checkpoint files (`.ckpt`), tensor files (`.pt`), and training logs. These need to be present locally for inference to work successfully. Due to size limitations, ensure these large files are ignored in `.gitignore` if linking remote repositories or managing Git LFS.
+- **Model Files & `.gitignore`:** The `/sign_idd_model_20...` directory contains heavy checkpoint files (`.ckpt`), tensor files (`.pt`), tracking information, and dynamically generated files like `lookup.json` or generated `videos/`. These need to be present locally but are strictly ignored in `.gitignore` due to size limitations. Their lookup path is easily configurable in `sign-idd-api/config.py`.
 - **Dependencies:** The backend uses heavy libraries (like `torch` and `numpy`). A dedicated virtual environment is strongly recommended to isolate dependencies.
 - **Supabase Integration:** Make sure you configure your `.env.local` accurately using your personal or project-wide Supabase credentials to access the DB and auth services natively.
 
