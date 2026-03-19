@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+numpy
+torch
+pandas
+scipy
+matplotlib
+einops
+tqdm
+pyyaml
+python-multipart
+requests
+httpx

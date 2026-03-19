@@ -1,0 +1,135 @@
+@import url("https://fonts.googleapis.com/css2?family=Mynerve&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-card-bg: var(--card-bg);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --radius-input: 8px;
+}
+
+:root {
+  --background: #000000;
+  --foreground: #fafafa;
+
+  /* Dark Mode - Rich Gradients (Default) */
+  --primary: #818cf8; /* Indigo 400 */
+  --secondary: #a78bfa; /* Violet 400 */
+  --accent: #f472b6; /* Pink 400 */
+  --primary-foreground: #0a0a0a;
+  --card-bg: #1a1a1a;
+  --border: #27272a;
+  --input: #18181b;
+  --ring: #818cf8;
+  --muted: #a1a1aa;
+
+  /* Font families */
+  --font-cursive: "Mynerve", cursive;
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  font-family: var(--font-body), "LXGW WenKai Mono TC", monospace;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), "Lexend Deca", sans-serif;
+  font-optical-sizing: auto;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 rounded-btn bg-primary text-white font-semibold hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl;
+  }
+
+  .btn-gradient {
+    @apply px-6 py-3 rounded-btn font-semibold text-white transition-all duration-200;
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--secondary) 100%
+    );
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+  }
+
+  .btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  }
+
+  .card {
+    @apply p-8 rounded-card bg-card-bg border border-border shadow-sm hover:shadow-md transition-shadow duration-300;
+  }
+
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--secondary) 50%,
+      var(--accent) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding-bottom: 0.2em; /* Prevents descenders from being clipped */
+    padding-right: 0.1em; /* Prevents italic/cursive slant clipping */
+    line-height: normal; /* Ensures proper vertical spacing */
+    display: inline-block; /* Required for padding to work on spans */
+  }
+
+  .font-cursive {
+    font-family: var(--font-cursive), "Mynerve", cursive;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .section-gradient {
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.05) 100%
+    );
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}

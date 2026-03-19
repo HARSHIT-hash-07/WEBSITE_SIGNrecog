@@ -1,0 +1,80 @@
+# ========================
+# Root .gitignore
+# ========================
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# Backend (Python)
+# ========================
+backend/venv/
+backend/__pycache__/
+backend/output/
+*.pyc
+*.pyo
+*.pyd
+
+# ========================
+# Frontend (Next.js)
+# ========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env*.local
+
+# ========================
+# Secrets & Environment
+# ========================
+.env
+.env.local
+.env*.local
+
+# ========================
+# Model files (large)
+# ========================
+sign_idd_model_20260121_171210/
+*.ckpt
+*.pt
+*.pth
+
+# ========================
+# Sign-IDD API
+# ========================
+
+# Python cache inside api folder
+sign-idd-api/__pycache__/
+sign-idd-api/**/__pycache__/
+
+# Virtual environment if created inside api folder
+sign-idd-api/venv/
+
+# Generated at runtime — not needed in repo
+sign-idd-api/lookup.json
+
+# Any videos copied into the api folder
+sign-idd-api/videos/
+sign-idd-api/test_videos/
+
+# Any skeleton data files copied into api folder
+sign-idd-api/*.pt
+sign-idd-api/*.ckpt
+sign-idd-api/phoenix14t.*
+
+# ========================
+# Misc
+# ========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+
