@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { Search, Loader2, Play, AlertCircle } from "lucide-react";
+import { Search, Loader2, Play, AlertCircle, Heart, ThumbsUp, ThumbsDown } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 interface VideoEntry {
   name: string;
@@ -16,6 +17,13 @@ export function TextToSignClient() {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
 
   const handleSearch = async () => {
     if (!inputText.trim()) return;
@@ -27,7 +35,7 @@ export function TextToSignClient() {
     setSelectedVideo(null);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/search?q=${encodeURIComponent(inputText)}`, {
+      const response = await fetch(`http://127.0.0.1:8001/search?q=${encodeURIComponent(inputText)}`, {
         method: "GET",
       });
 
@@ -37,9 +45,12 @@ export function TextToSignClient() {
 
       const data = await response.json();
       setResults(data.results || []);
+
+      // Log search query async
+      supabase.from("search_history").insert([{ query: inputText, user_id: user?.id || null }]).then();
     } catch (err) {
       setError(
-        "Something went wrong. Please check if the backend API is running at http://127.0.0.1:8000",
+        "Something went wrong. Please check if the backend API is running at http://127.0.0.1:8001",
       );
       console.error(err);
     } finally {
@@ -48,11 +59,10 @@ export function TextToSignClient() {
   };
 
   const handleSelectVideo = (videoName: string) => {
-    setSelectedVideo(`http://127.0.0.1:8000/video/${videoName}`);
+    setSelectedVideo(`http://127.0.0.1:8001/video/${videoName}`);
   };
-
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
+    <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-200px)]" style={{ minHeight: '500px' }}>
       {/* Search Section */}
       <div className="flex-1 space-y-4">
         <div className="card h-full flex flex-col">
@@ -164,11 +174,14 @@ export function TextToSignClient() {
             {selectedVideo ? (
               <video
                 key={selectedVideo} // Forces video to reload when source changes
-                src={selectedVideo}
                 controls
                 autoPlay
-                className="w-full h-full object-contain"
-              />
+                playsInline
+                muted
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+              >
+                <source src={selectedVideo} type="video/mp4" />
+              </video>
             ) : (
               <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-500 max-w-sm mx-auto">
                 <div className="w-16 h-16 rounded-full bg-zinc-900/50 flex items-center justify-center mb-4 border border-zinc-800">
@@ -181,6 +194,47 @@ export function TextToSignClient() {
               </div>
             )}
           </div>
+
+          {selectedVideo && (
+            <div className="mt-4 flex items-center justify-between border border-zinc-800/50 bg-zinc-900/30 p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={async () => {
+                    if (!user) { alert("Please login to save favorites!"); return; }
+                    const videoName = selectedVideo.split("/video/")[1];
+                    const { error } = await supabase.from("favorites").insert([{ video_name: videoName, user_id: user.id }]);
+                    if (error) {
+                      if (error.code === '23505') alert("Already in favorites!");
+                      else alert("Error saving favorite");
+                    } else {
+                      alert("Saved to favorites!");
+                    }
+                  }}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
+                >
+                  <Heart className="w-4 h-4 mr-2" />
+                  Save to Favorites
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-zinc-500 mr-2 hidden sm:inline">Was this accurate?</span>
+                <Button 
+                  size="icon" 
+                  className="bg-zinc-800 hover:bg-green-600/20 text-zinc-400 hover:text-green-400 border border-zinc-700"
+                  onClick={() => supabase.from("feedback").insert([{ video_name: selectedVideo.split("/video/")[1], user_id: user?.id || null, is_positive: true }]).then(() => alert("Thanks for your feedback!"))}
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  className="bg-zinc-800 hover:bg-red-600/20 text-zinc-400 hover:text-red-400 border border-zinc-700"
+                  onClick={() => supabase.from("feedback").insert([{ video_name: selectedVideo.split("/video/")[1], user_id: user?.id || null, is_positive: false }]).then(() => alert("Thanks for your feedback!"))}
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
