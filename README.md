@@ -9,7 +9,8 @@ This repository is split into several interconnected services:
 - `frontend/`: A Next.js web application providing the user interface. Built with React, TailwindCSS, Framer Motion, and Three.js for rendering sign animations.
 - `backend/`: A FastAPI Python backend that hosts the machine learning inference pipeline (`SignModel`) for text-to-sign translation.
 - `sign-idd-api/`: A FastAPI microservice designed to serve, search, and stream pre-generated sign language videos and text indices.
-- `sign_idd_model_20260121_171210/`: Contains the large model checkpoints (e.g., `best.ckpt`), PyTorch skeleton tensors, and generated video files.
+- `SignIDD_CodeFiles/`: Contains the core diffusion model architecture (Sign-IDD), training logic, and evaluation scripts. *(Note: Out-of-the-box inference for custom text is currently not supported without the underlying dataset dictionaries and a dedicated `predict.py` script).*
+- `sign_idd_model_20260121_171210/`: Contains the large model checkpoints (e.g., `best.ckpt`), PyTorch skeleton tensors, configuration files (`Sign-IDD.yaml`), and generated video files.
 
 ---
 
