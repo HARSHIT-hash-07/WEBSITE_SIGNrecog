@@ -1,93 +1,79 @@
-# SignBridge
+# SignBridge: Real-Time AI Sign Language Translation 🤟🦾
 
-SignBridge is an end-to-end platform for translating text into sign language representations. The application consists of a modern web interface, an AI-powered text-to-sign inference backend, and an API services layer to query and stream pre-generated sign language video datasets.
-
-## Project Structure
-
-This repository is split into several interconnected services:
-
-- `frontend/`: A Next.js web application providing the user interface. Built with React, TailwindCSS, Framer Motion, and Three.js for rendering sign animations.
-- `backend/`: A FastAPI Python backend that hosts the machine learning inference pipeline (`SignModel`) for text-to-sign translation.
-- `sign-idd-api/`: A FastAPI microservice designed to serve, search, and stream pre-generated sign language videos and text indices.
-- `SignIDD_CodeFiles/`: Contains the core diffusion model architecture (Sign-IDD), training logic, and evaluation scripts. *(Note: Out-of-the-box inference for custom text is currently not supported without the underlying dataset dictionaries and a dedicated `predict.py` script).*
-- `sign_idd_model_20260121_171210/`: Contains the large model checkpoints (e.g., `best.ckpt`), PyTorch skeleton tensors, configuration files (`Sign-IDD.yaml`), and generated video files.
+SignBridge is a high-performance, end-to-end platform for translating text into fluid, 3D sign language animations. It integrates a **state-of-the-art Diffusion Model (Sign-IDD)** to generate life-like skeletal motion from natural language.
 
 ---
 
-## Prerequisites
+## 🏛️ Project Architecture
 
-Before setting up the project, make sure you have the following installed:
-- **Node.js** (v18 or higher) & **npm**
-- **Python** (3.9 or higher)
-- **Git**
+The repository is organized into four core pillars:
+
+- **`frontend/`**: Next.js (React) application. Features a 3D avatar bridge built with Three.js and Framer Motion for high-fidelity animation playback.
+- **`backend/`**: The **Inference Powerhouse**. A FastAPI server hosting the Sign-IDD Diffusion Engine. Optimized for Apple Silicon (M2/M3) and NVIDIA GPUs.
+- **`SignIDD_CodeFiles/`**: The core research implementation of the Sign-IDD architecture, including the ACD (Diffusion), Encoder, and Denoiser modules.
+- **`sign-idd-api/`**: A lightweight microservice for searching and streaming the PHOENIX14T pre-generated dataset videos.
 
 ---
 
-## 🚀 Setup & Installation Guide
+## 🚀 Getting Started
 
-### 1. Frontend Setup (Next.js)
-The frontend relies on Supabase for data and authentication.
+### 1. Prerequisites
+- **Node.js** v18+
+- **Python** 3.9+ (3.11 recommended)
+- **Git LFS** (Optional, for large file management)
+- **Hardware**: Apple M1/M2/M3 (MPS supported) or NVIDIA GPU (CUDA supported).
 
+### 2. The AI Brain (Model Setup)
+The Sign-IDD model weights (`best.ckpt`) are >1GB and are not stored in Git.
+1. Download the `best.ckpt` file from the project Google Drive/Source.
+2. Place it in a folder named `sign_idd_model_20260121_171210/` at the project root.
+3. **Verify the DNA**: The repo includes `backend/model_configs/src_vocab.txt`. This 1,089-word dictionary is hard-coded to your model's embedding layer (indices must match perfectly).
+
+### 3. Backend Setup (The Engine)
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Start the translation engine
+uvicorn main:app --reload
+```
+*The engine will automatically detect if you are on a Mac (MPS) or a PC (CUDA) and optimize the diffusion math accordingly.*
+
+### 4. Frontend Setup (The Bridge)
 ```bash
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Create a local environment file and add your Supabase keys
-cp .env.local.example .env.local
-# Or manually create .env.local and populate NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-# Start the development server (runs on http://localhost:3000)
+cp .env.local.example .env.local  # Add your Supabase keys here
 npm run dev
 ```
 
-### 2. Backend Setup (Inference API)
-This service exposes the `/translate` endpoint matching text requests with the ML model.
+---
 
-```bash
-cd backend
+## 🧠 Real-Time Sign Diffusion (Sign-IDD)
 
-# Create a virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+Unlike simple video lookup systems, SignBridge uses **A-GPS (Sign-IDD)** to generate new motion. When you send a request to `/translate`:
 
-# Install required Python dependencies (PyTorch, FastAPI, etc.)
-pip install -r requirements.txt
-
-# Start the main backend server (runs on http://localhost:8000)
-uvicorn main:app --reload
-```
-
-### 3. Sign-IDD API Setup (Video serving API)
-This secondary API serves the pre-generated sign-language mappings and videos.
-
-```bash
-cd sign-idd-api
-
-# Create a virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure model path (Optional)
-# The API expects the model folder at `../sign_idd_model_20260121_171210` by default.
-# You can change this by editing `config.py` in the sign-idd-api folder 
-# or by setting the environment variable:
-# export MODEL_DIR="/path/to/your/custom_model_folder"
-
-# Start the API on a separate port (e.g., 8001) to avoid conflicts
-uvicorn main:app --reload --port 8001
-```
+1. **Text-to-Gloss**: Your English text is mapped to German Sign Language (GSL) glosses (e.g., "Today rainy" -> "HEUTE REGEN").
+2. **Diffusion Sampling**: The model runs 20-50 steps of DDIM sampling to "draw" a 3D skeleton in space, representing the sign's fluidity.
+3. **Skeleton Stream**: The backend returns a JSON sequence of `(frames, 50, 3)` coordinates.
+4. **3D Playback**: The Next.js frontend receives these points and uses Three.js to manipulate the avatar's joints in real-time.
 
 ---
 
-## Important Notes
-- **Model Files & `.gitignore`:** The `/sign_idd_model_20...` directory contains heavy checkpoint files (`.ckpt`), tensor files (`.pt`), tracking information, and dynamically generated files like `lookup.json` or generated `videos/`. These need to be present locally but are strictly ignored in `.gitignore` due to size limitations. Their lookup path is easily configurable in `sign-idd-api/config.py`.
-- **Dependencies:** The backend uses heavy libraries (like `torch` and `numpy`). A dedicated virtual environment is strongly recommended to isolate dependencies.
-- **Supabase Integration:** Make sure you configure your `.env.local` accurately using your personal or project-wide Supabase credentials to access the DB and auth services natively.
+## 🛠️ Reproducibility & Troubleshooting
 
-## License
-*Placeholder - refer to individual directory licenses or the overarching project license.*
+- **MPS/Float64 Error**: If running on Mac M2, the system automatically casts to `float32` to ensure compatibility with Metal Performance Shaders.
+- **Vocabulary Mismatch**: Do NOT modify `backend/model_configs/src_vocab.txt`. The indices (0-1088) are strictly tied to the `best.ckpt` embedding layer.
+- **Bootstrapping**: If you need to rebuild the vocabulary from the official NSLT source, run `python backend/build_vocab.py`.
+
+---
+
+## 📊 Dataset Attribution
+This project is built using the **PHOENIX-2014-T** dataset and the **Sign-IDD (Ankita et al.)** diffusion architecture.
+
+---
+
+## 📄 License
+Refer to the individual service directories for specific licensing details.
