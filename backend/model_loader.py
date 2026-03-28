@@ -1,115 +1,85 @@
-import sys
 import os
-import torch
-import numpy as np
+import sys
+import threading
+from typing import Dict, Any, List
 
-# Add the model directory to sys.path so we can import from it
-# Assuming directory structure:
-# WEBSITE/
-#   backend/
-#     model_loader.py
-#   sign_idd_model_20260121_171210/
-#     Sign-IDD/
-#       text_to_sign.py
-
+# Add backend to path so we can import sign_bridge_inference
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-MODEL_ROOT = os.path.join(PROJECT_ROOT, "sign_idd_model_20260121_171210", "Sign-IDD")
+if CURRENT_DIR not in sys.path:
+    sys.path.append(CURRENT_DIR)
 
-if MODEL_ROOT not in sys.path:
-    sys.path.append(MODEL_ROOT)
+from sign_bridge_inference import SignBridgeInference
 
-try:
-    from text_to_sign import TextToSignPipeline
-except ImportError as e:
-    print(f"Error importing TextToSignPipeline: {e}")
-    # Fallback or error handling
-    TextToSignPipeline = None
+# Configuration
+MODEL_ROOT = "/Users/harshit/Documents/WEBSITE_EXPLO/sign_idd_model_20260121_171210"
 
 class SignModel:
+    """
+    Singleton wrapper for the SignBridgeInference engine.
+    Handles thread-safe inference and model lifecycle.
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(SignModel, cls).__new__(cls)
+                cls._instance._initialized = False
+            return cls._instance
+
     def __init__(self):
-        print("Initializing SignBridge Model (Real Mode)...")
-        
-        if TextToSignPipeline is None:
-            raise RuntimeError("Could not load TextToSignPipeline. Check paths.")
-
-        self.config_path = os.path.join(MODEL_ROOT, "Configs", "TA_model.yaml")
-        self.ckpt_path = os.path.join(MODEL_ROOT, "Models", "TA_checkpoint", "best.ckpt")
-        
-        if not os.path.exists(self.config_path):
-             print(f"Warning: Config not found at {self.config_path}")
-        if not os.path.exists(self.ckpt_path):
-             print(f"Warning: Checkpoint not found at {self.ckpt_path}")
-
-        # Initialize the pipeline
-        # The Sign-IDD config uses relative paths (e.g., ./Configs/src_vocab.txt)
-        # so we must change CWD to MODEL_ROOT during initialization
-        
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(MODEL_ROOT)
+        if self._initialized:
+            return
             
-            self.pipeline = TextToSignPipeline(
-                config_path=self.config_path,
-                checkpoint_path=self.ckpt_path
-            )
-            self.is_loaded = True
-            print("SignBridge Model loaded successfully.")
-        except Exception as e:
-            print(f"Failed to load model: {e}")
-            self.is_loaded = False
-            raise e
-        finally:
-            os.chdir(original_cwd)
+        print("Initializing SignBridge Model (Real Integration)...")
+        self.engine = None
+        self.is_loaded = False
+        self._load_error = None
+        self._initialized = True
+        
+        # Load the model in a background thread to avoid blocking FastAPI startup
+        threading.Thread(target=self._load_model_async, daemon=True).start()
 
-    def inference(self, text: str):
+    def _load_model_async(self):
         """
-        Run inference using the pipeline.
-        Returns a list of frames, where each frame is a list of joints [x, y, z].
+        Loads the model weights into memory.
+        """
+        try:
+            # We use the inference engine we just built
+            self.engine = SignBridgeInference(MODEL_ROOT)
+            self.is_loaded = True
+            print("✅ SignBridge Model loaded and ready for inference.")
+        except Exception as e:
+            self._load_error = str(e)
+            print(f"❌ Failed to load SignBridge Model: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def inference(self, text: str) -> Dict[str, Any]:
+        """
+        Performs inference on the provided text.
         """
         if not self.is_loaded:
-            raise RuntimeError("Model is not loaded.")
+            if self._load_error:
+                raise RuntimeError(f"Model failed to load: {self._load_error}")
+            raise RuntimeError("Model is still loading. Please try again in 30 seconds.")
 
-        print(f"Generating sign for: {text}")
-        
-        # Run pipeline
-        # result['skeleton'] is a numpy array (frames, 150)
-        # We need to reshape it to (frames, 50, 3) or similar for the frontend
-        # The frontend expects [frames][joints][xyz] -> number[][][]
+        print(f"Inference Request: '{text}'")
         
         try:
-            # We explicitly pass text. The pipeline handles translation to gloss if needed.
-            # But the pipeline assumes German text input for 'text' arg.
-            # If we want to support English, we might need to rely on its internal keyword extraction 
-            # or add a translation step. The TextToGloss class in text_to_sign.py has some English mapping.
-            
-            # Generate a unique video name using timestamp or UUID if needed, but for now simple counter or text hash
-            # pipeline.run uses `video_name` argument. default is "sign_output".
-            video_name = f"sign_{hash(text) % 10000}"
-            
-            output_dir = os.path.join(CURRENT_DIR, "output")
-            result = self.pipeline.run(
-                text=text, 
-                output_dir=output_dir,
-                video_name=video_name
-            )
-            skeleton = result.get('skeleton')
-            video_full_path = result.get('video_path')
-            
-            if skeleton is None:
-                return {"skeletons": [], "video_url": None}
-
-            # Skeleton shape is (frames, 150)
-            # 150 = 50 joints * 3 coordinates
-            frames = skeleton.shape[0]
-            reshaped_skeleton = skeleton.reshape(frames, 50, 3)
+            # Run the translation!
+            # We use 20 sampling steps for a good balance of speed and quality on M2
+            skeletons = self.engine.translate(text, sampling_steps=20)
             
             return {
-                "skeletons": reshaped_skeleton.tolist(),
-                "video_url": f"/static/{video_name}.mp4" 
+                "skeletons": skeletons,
+                "video_url": None, # Diffusion model produces raw skeletons, not video
+                "glosses": self.engine.text_to_glosses(text)
             }
-
         except Exception as e:
             print(f"Inference error: {e}")
             raise e
 
+# Global singleton instance
+sign_model = SignModel()
