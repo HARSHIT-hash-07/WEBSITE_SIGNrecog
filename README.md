@@ -1,4 +1,4 @@
-# SignBridge: Real-Time AI Sign Language Translation 🤟🦾
+# SignBridge: Real-Time AI Sign Language Translation 
 
 SignBridge is a high-performance, end-to-end platform for translating text into fluid, 3D sign language animations. It integrates a **state-of-the-art Diffusion Model (Sign-IDD)** to generate life-like skeletal motion from natural language.
 
