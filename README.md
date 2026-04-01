@@ -1,4 +1,4 @@
-# SignBridge: Real-Time AI Sign Language Translation 
+# SignBridge: Real-Time AI Sign Language Translation 🌍🤟
 
 SignBridge is a high-performance, end-to-end platform for translating text into fluid, 3D sign language animations. It integrates a **state-of-the-art Diffusion Model (Sign-IDD)** to generate life-like skeletal motion from natural language.
 
@@ -6,67 +6,66 @@ SignBridge is a high-performance, end-to-end platform for translating text into 
 
 ## 🏛️ Project Architecture
 
-The repository is organized into four core pillars:
+The platform is now powered by a **Hybrid Cloud Architecture**:
 
-- **`frontend/`**: Next.js (React) application. Features a 3D avatar bridge built with Three.js and Framer Motion for high-fidelity animation playback.
-- **`backend/`**: The **Inference Powerhouse**. A FastAPI server hosting the Sign-IDD Diffusion Engine. Optimized for Apple Silicon (M2/M3) and NVIDIA GPUs.
-- **`SignIDD_CodeFiles/`**: The core research implementation of the Sign-IDD architecture, including the ACD (Diffusion), Encoder, and Denoiser modules.
-- **`sign-idd-api/`**: A lightweight microservice for searching and streaming the PHOENIX14T pre-generated dataset videos.
+- **`frontend/`**: Next.js (React) application. Features a 3D avatar bridge built with Three.js and Framer Motion. **Now connected to the Cloud Inference Engine.**
+- **`hf_deploy/`**: The **Cloud Backend**. A containerized FastAPI server deployed to Hugging Face Spaces. It hosts the shrunken, optimized Sign-IDD Diffusion Engine (442MB).
+- **`SignIDD_CodeFiles/`**: The core research implementation of the Sign-IDD architecture (ACD Diffusion, Encoder, Denoiser).
+- **`sign-idd-api/`**: A legacy microservice for searching pre-generated PHOENIX14T dataset videos.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Quick Start)
 
-### 1. Prerequisites
-- **Node.js** v18+
-- **Python** 3.9+ (3.11 recommended)
-- **Git LFS** (Optional, for large file management)
-- **Hardware**: Apple M1/M2/M3 (MPS supported) or NVIDIA GPU (CUDA supported).
+### 1. Frontend Setup (The Bridge)
+The frontend is pre-configured to talk to the Hugging Face Cloud Engine. You don't need a local backend to run translations!
 
-### 2. The AI Brain (Model Setup)
-The Sign-IDD model weights (`best.ckpt`) are >1GB and are not stored in Git.
-1. Download the `best.ckpt` file from the project Google Drive/Source.
-2. Place it in a folder named `sign_idd_model_20260121_171210/` at the project root.
-3. **Verify the DNA**: The repo includes `backend/model_configs/src_vocab.txt`. This 1,089-word dictionary is hard-coded to your model's embedding layer (indices must match perfectly).
-
-### 3. Backend Setup (The Engine)
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Start the translation engine
-uvicorn main:app --reload
-```
-*The engine will automatically detect if you are on a Mac (MPS) or a PC (CUDA) and optimize the diffusion math accordingly.*
-
-### 4. Frontend Setup (The Bridge)
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local  # Add your Supabase keys here
 npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to see it in action.
+
+---
+
+## 🧠 Cloud Inference Engine (Sign-IDD)
+
+Unlike simple video lookup systems, SignBridge uses **A-GPS (Sign-IDD)** to generate *new* motion.
+
+### How it works:
+1.  **Text-to-Gloss**: English text is mapped to GSL glosses (e.g., "Today rainy" -> "HEUTE REGEN").
+2.  **Cloud Diffusion**: The request hits the [Hugging Face Space](https://huggingface.co/spaces/Harshit2907/sign-idd-inference).
+3.  **Optimized Sampling**: The cloud engine runs 20-50 steps of DDIM sampling using **Half-Precision (float16)** weights for 2x faster results.
+4.  **Instant Streaming**: The backend generates and returns a web-optimized MP4 video representing the sign's fluidity.
+
+---
+
+## 🛠️ Deployment & Model Optimization
+
+To fit the **1.14 GB** model into Hugging Face's **1 GB** limit, we performed several optimizations:
+
+1.  **Weight Stripping**: Removed 300MB+ of training-only "luggage" (optimizer states, gradients, schedulers).
+2.  **Half-Precision (FP16)**: Converted 32-bit weights to 16-bit, reducing the size to **442 MB** without losing visual fidelity.
+3.  **Containerization**: Built a custom `Dockerfile` with FFmpeg and OpenCV for cloud-native video rendering.
+
+### Deploying the Cloud Engine:
+If you modify the backend logic in `hf_deploy/`, redeploy with:
+```bash
+cd hf_deploy
+git add .
+git commit -m "Update backend engine"
+git push origin main
 ```
 
 ---
 
-## 🧠 Real-Time Sign Diffusion (Sign-IDD)
-
-Unlike simple video lookup systems, SignBridge uses **A-GPS (Sign-IDD)** to generate new motion. When you send a request to `/translate`:
-
-1. **Text-to-Gloss**: Your English text is mapped to German Sign Language (GSL) glosses (e.g., "Today rainy" -> "HEUTE REGEN").
-2. **Diffusion Sampling**: The model runs 20-50 steps of DDIM sampling to "draw" a 3D skeleton in space, representing the sign's fluidity.
-3. **Skeleton Stream**: The backend returns a JSON sequence of `(frames, 50, 3)` coordinates.
-4. **3D Playback**: The Next.js frontend receives these points and uses Three.js to manipulate the avatar's joints in real-time.
-
----
-
-## 🛠️ Reproducibility & Troubleshooting
-
-- **MPS/Float64 Error**: If running on Mac M2, the system automatically casts to `float32` to ensure compatibility with Metal Performance Shaders.
-- **Vocabulary Mismatch**: Do NOT modify `backend/model_configs/src_vocab.txt`. The indices (0-1088) are strictly tied to the `best.ckpt` embedding layer.
-- **Bootstrapping**: If you need to rebuild the vocabulary from the official NSLT source, run `python backend/build_vocab.py`.
+## 🛠️ Local Development (Optional)
+If you wish to run the backend locally:
+1.  Navigate to `hf_deploy/`.
+2.  Install requirements: `pip install -r requirements.txt`.
+3.  Run: `uvicorn backend.main:app --port 8000`.
+4.  Update `frontend/components/features/TextToSignClient.tsx` to point to `localhost:8000`.
 
 ---
 
