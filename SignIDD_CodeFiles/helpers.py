@@ -370,29 +370,29 @@ def getSkeletalParentsDict():
     return parents_dict
 
 
-# def get_hand_joint_indices() -> tuple[list, list]:
-#     # Based on your skeleton indexing (0..49),
-#     # left-hand joints: 8..28, right-hand: 29..49
-#     left = list(range(8, 29))
-#     right = list(range(29, 50))
-#     return left, right
+def get_hand_joint_indices() -> tuple[list, list]:
+    # Based on your skeleton indexing (0..49),
+    # left-hand joints: 8..28, right-hand: 29..49
+    left = list(range(8, 29))
+    right = list(range(29, 50))
+    return left, right
 
-# def make_joint_channel_masks(num_joints: int = 50, dims: int = 3, device="cpu"):
-#     """
-#     Returns (mask_body, mask_hand) as [1, 1, num_joints*dims] boolean tensors.
-#     Each True selects ALL dims (x,y,z) for that joint.
-#     """
-#     handL, handR = get_hand_joint_indices()
-#     hand_set = set(handL + handR)
-#     body_joints = [j for j in range(num_joints) if j not in hand_set]
+def make_joint_channel_masks(num_joints: int = 50, dims: int = 3, device="cpu"):
+    """
+    Returns (mask_body, mask_hand) as [1, 1, num_joints*dims] boolean tensors.
+    Each True selects ALL dims (x,y,z) for that joint.
+    """
+    handL, handR = get_hand_joint_indices()
+    hand_set = set(handL + handR)
+    body_joints = [j for j in range(num_joints) if j not in hand_set]
 
-#     def joints_to_mask(jidx):
-#         m = torch.zeros(num_joints * dims, dtype=torch.bool, device=device)
-#         for j in jidx:
-#             start = j * dims
-#             m[start:start + dims] = True
-#         return m.view(1, 1, -1)
+    def joints_to_mask(jidx):
+        m = torch.zeros(num_joints * dims, dtype=torch.bool, device=device)
+        for j in jidx:
+            start = j * dims
+            m[start:start + dims] = True
+        return m.view(1, 1, -1)
 
-#     mask_hand = joints_to_mask(list(hand_set))
-#     mask_body = joints_to_mask(body_joints)
-#     return mask_body, mask_hand
+    mask_hand = joints_to_mask(list(hand_set))
+    mask_body = joints_to_mask(body_joints)
+    return mask_body, mask_hand
