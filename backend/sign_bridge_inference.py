@@ -24,12 +24,7 @@ class SignBridgeInference:
         self.model_root = model_root
         
         if device is None:
-            if torch.backends.mps.is_available():
-                self.device = torch.device("mps")
-            elif torch.cuda.is_available():
-                self.device = torch.device("cuda")
-            else:
-                self.device = torch.device("cpu")
+            self.device = torch.device('cpu')
         else:
             self.device = torch.device(device)
             
@@ -78,23 +73,51 @@ class SignBridgeInference:
         for p in ".,!?;:": text = text.replace(p, "")
         words = text.split()
         
+        # Expanded mapping from common English descriptors to official PHOENIX-14T German glosses
         mapping = {
-            "I": "ICH", "TODAY": "HEUTE", "TOMORROW": "MORGEN", "WEATHER": "WETTER",
-            "RAIN": "REGEN", "SUN": "SONNE", "CLOUDS": "WOLKEN", "SNOW": "SCHNEE",
-            "COLD": "KALT", "WARM": "WARM", "SOUTH": "SUED", "NORTH": "NORD",
-            "EAST": "OST", "WEST": "WEST", "NIGHT": "NACHT", "AND": "UND"
+            "I": "ICH", 
+            "TODAY": "HEUTE", 
+            "TOMORROW": "MORGEN", 
+            "YESTERDAY": "GESTERN",
+            "WEATHER": "WETTER",
+            "RAIN": "REGEN", 
+            "SUN": "SONNE", 
+            "CLOUDS": "WOLKE", 
+            "SNOW": "SCHNEE",
+            "COLD": "KALT", 
+            "WARM": "WARM", 
+            "SOUTH": "SUED", 
+            "NORTH": "NORD",
+            "EAST": "OST", 
+            "WEST": "WEST", 
+            "NIGHT": "NACHT", 
+            "AND": "UND",
+            "NICE": "SCHOEN",
+            "BAD": "SCHLECHT",
+            "STORM": "STURM",
+            "TEMPERATURE": "TEMPERATUR",
+            "MONDAY": "MONTAG",
+            "TUESDAY": "DIENSTAG",
+            "WEDNESDAY": "MITTWOCH",
+            "THURSDAY": "DONNERSTAG",
+            "FRIDAY": "FREITAG",
+            "SATURDAY": "SAMSTAG",
+            "SUNDAY": "SONNTAG"
         }
         
         res = []
         for w in words:
             mapped = mapping.get(w, w)
+            # Check if mapped gloss exists in vocab
             if mapped in self.vocab.stoi:
                 res.append(mapped)
             else:
+                # If not found, use closest match or <unk>
+                # Using <unk> implicitly by mapping to word not in stoi
                 res.append(mapped)
         return res
 
-    def translate(self, text: str, sampling_steps: int = 20) -> List[List[List[float]]]:
+    def translate(self, text: str, sampling_steps: int = 50) -> List[List[List[float]]]:
         glosses = self.text_to_glosses(text)
         tokens = [BOS_TOKEN] + glosses + [EOS_TOKEN]
         indices = [self.vocab.stoi[t] for t in tokens]
@@ -118,12 +141,13 @@ class SignBridgeInference:
             dummy_trg = torch.zeros((1, n_frames, 150), device=self.device)
             trg_mask = torch.ones((1, 1, n_frames), device=self.device).bool()
             
-            # Use ddim_sample from ACD directly
+            # Use ddim_sample from ACD directly, passing runtime sampling_steps
             results = self.model.ACD.ddim_sample(
                 encoder_output=encoder_output,
                 input_3d=dummy_trg,
                 src_mask=src_mask,
-                trg_mask=trg_mask
+                trg_mask=trg_mask,
+                sampling_steps=sampling_steps  # runtime override (uses self.sampling_timesteps if None)
             )
             
             # Take the final prediction
