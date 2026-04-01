@@ -72,9 +72,21 @@ class SignModel:
             # We use 20 sampling steps for a good balance of speed and quality on M2
             skeletons = self.engine.translate(text, sampling_steps=20)
             
+            import uuid
+            from video_renderer import render_skeleton_to_video
+            
+            filename = f"gen_{uuid.uuid4().hex[:8]}.mp4"
+            output_dir = os.path.join(CURRENT_DIR, "output")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, filename)
+            
+            render_skeleton_to_video(skeletons, output_path)
+            
+            video_url = f"http://127.0.0.1:8000/static/{filename}"
+            
             return {
-                "skeletons": skeletons,
-                "video_url": None, # Diffusion model produces raw skeletons, not video
+                "skeletons": None,
+                "video_url": video_url,
                 "glosses": self.engine.text_to_glosses(text)
             }
         except Exception as e:

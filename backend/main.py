@@ -38,7 +38,7 @@ class TranslationRequest(BaseModel):
     gloss_mode: Optional[str] = "default"
 
 class TranslationResponse(BaseModel):
-    skeletons: List[List[List[float]]] # [frames][joints][xyz]
+    skeletons: Optional[List[List[List[float]]]] = None # [frames][joints][xyz]
     video_url: Optional[str] = None
     text_processed: str
 
