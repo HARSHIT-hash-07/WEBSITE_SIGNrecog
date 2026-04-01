@@ -79,7 +79,7 @@ export function TextToSignClient() {
     setSelectedVideo(null);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/translate`, {
+      const response = await fetch(`https://harshit2907-sign-idd-inference.hf.space/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
