@@ -1,0 +1,27 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Run at 00:00 on every 3rd day-of-month.
+    - cron: '0 0 */3 * *'
+  # Allow manual trigger from the GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        # We use curl to make a simple authenticated request to the REST API root.
+        # This registers as activity without needing to query a specific table.
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://ayzsfquccyzuuivefmra.supabase.co/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 400 ] || [ "$HTTP_STATUS" -eq 404 ]; then
+            echo "Successfully pinged Supabase. Status: $HTTP_STATUS"
+          else
+            echo "Failed to ping Supabase or received unexpected status: $HTTP_STATUS"
+            exit 1
+          fi
