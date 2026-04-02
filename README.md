@@ -1,6 +1,22 @@
 # SignBridge: AI-Powered Sign Language Translation Platform 🌍🤟
 
-**SignBridge** is a high-performance, end-to-end platform designed to bridge the communication gap for the Deaf and hard-of-hearing community. Unlike static video dictionaries, SignBridge utilizes a **State-of-the-Art Diffusion Model (Sign-IDD)** to generate fluid, real-time 3D skeletal animations from any English text input.
+**SignBridge** is a high-performance, end-to-end platform designed to bridge the communication gap for the Deaf and hard-of-hearing community.
+
+---
+
+## ⚡ Quick Run (How to start)
+
+To launch the platform locally, run these in two separate terminal windows:
+
+### 1. Start AI Backend
+```bash
+cd hf_deploy && source venv/bin/activate && uvicorn backend.main:app --port 8000 --reload
+```
+
+### 2. Start Frontend Website
+```bash
+cd frontend && npm run dev
+```
 
 ---
 
