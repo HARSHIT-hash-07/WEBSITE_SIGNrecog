@@ -34,12 +34,25 @@ export default function SignToTextPage() {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center">
-          <span className="gradient-text font-cursive">Sign</span> to Text
-          Translation
+        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center flex flex-col items-center gap-4">
+          <div>
+            <span className="gradient-text font-cursive">Sign</span> to Text
+            Translation
+          </div>
+          <span className="text-xs font-mono px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full text-indigo-300 animate-pulse uppercase tracking-widest">
+            Coming Soon
+          </span>
         </h1>
 
-        <div className="max-w-4xl mx-auto relative">
+        <div className="max-w-4xl mx-auto relative group">
+          {/* Coming Soon Overlay */}
+          <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+            <div className="bg-black/60 backdrop-blur-md border border-white/10 px-8 py-4 rounded-2xl shadow-2xl transform rotate-[-5deg] group-hover:rotate-0 transition-transform duration-500">
+              <span className="text-3xl font-black italic tracking-tighter gradient-text uppercase">
+                Under Development
+              </span>
+            </div>
+          </div>
           <div className="card min-h-125 flex flex-col items-center justify-center relative overflow-hidden border-indigo-500/30 shadow-2xl shadow-indigo-500/10">
             {/* Scanner UI Elements */}
             <div className="absolute inset-0 pointer-events-none">
