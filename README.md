@@ -1,78 +1,128 @@
-# SignBridge: Real-Time AI Sign Language Translation 🌍🤟
+# SignBridge: AI-Powered Sign Language Translation Platform 🌍🤟
 
-SignBridge is a high-performance, end-to-end platform for translating text into fluid, 3D sign language animations. It integrates a **state-of-the-art Diffusion Model (Sign-IDD)** to generate life-like skeletal motion from natural language.
-
----
-
-## 🏛️ Project Architecture
-
-The platform is now powered by a **Hybrid Cloud Architecture**:
-
-- **`frontend/`**: Next.js (React) application. Features a 3D avatar bridge built with Three.js and Framer Motion. **Now connected to the Cloud Inference Engine.**
-- **`hf_deploy/`**: The **Cloud Backend**. A containerized FastAPI server deployed to Hugging Face Spaces. It hosts the shrunken, optimized Sign-IDD Diffusion Engine (442MB).
-- **`SignIDD_CodeFiles/`**: The core research implementation of the Sign-IDD architecture (ACD Diffusion, Encoder, Denoiser).
-- **`sign-idd-api/`**: A legacy microservice for searching pre-generated PHOENIX14T dataset videos.
+**SignBridge** is a high-performance, end-to-end platform designed to bridge the communication gap for the Deaf and hard-of-hearing community. Unlike static video dictionaries, SignBridge utilizes a **State-of-the-Art Diffusion Model (Sign-IDD)** to generate fluid, real-time 3D skeletal animations from any English text input.
 
 ---
 
-## 🚀 Getting Started (Quick Start)
+## 🏛️ System Architecture
 
-### 1. Frontend Setup (The Bridge)
-The frontend is pre-configured to talk to the Hugging Face Cloud Engine. You don't need a local backend to run translations!
+SignBridge is engineered with a **Hybrid Cloud Architecture** to ensure high performance on any device without requiring local GPU resources.
 
+- **Frontend:** Built with **Next.js 14**, **TypeScript**, and **Framer Motion**. Deployed on Vercel.
+- **AI Backend:** A **FastAPI** inference server hosting the **Sign-IDD Diffusion Engine**. Deployed on Hugging Face Spaces.
+- **Database:** **Supabase (PostgreSQL)** for user authentication, search history, favorites, and feedback.
+- **Inference Engine:** Uses DDIM sampling and **PINN (Physics-Informed Neural Network)** losses to ensure anatomically correct and smooth motion.
+
+---
+
+## ✨ Key Features
+
+- **Real-Time Generation:** Converts text to sign language motion in seconds.
+- **Cloud-Native Inference:** Optimized model (1.14GB $\to$ 442MB) fits into free-tier cloud environments.
+- **User Ecosystem:** Secure Auth, Search History, Favorites, and Feedback systems built-in.
+- **Premium UI:** Dark-mode first design with glassmorphism and tech-forward aesthetics.
+- **Cross-Platform:** Works seamlessly on Desktop and Mobile browsers.
+
+---
+
+## 🚀 Local Setup Guide
+
+Follow these steps to run the complete SignBridge environment on your local machine (Windows, macOS, or Linux).
+
+### 📋 Prerequisites
+
+Ensure you have the following installed:
+- **Node.js** (v18.x or higher)
+- **Python** (3.9 - 3.11 recommended)
+- **Git**
+- **FFmpeg** (Required for video rendering)
+
+---
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/YourUsername/SignBridge.git
+cd SignBridge
+```
+
+### Step 2: Configure Environment Variables
+Create a file named `.env.local` in the project root and add your keys:
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Backend Configuration
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
+
+---
+
+### Step 3: Setup the AI Backend (FastAPI)
+
+#### **On Windows:**
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r hf_deploy/requirements.txt
+```
+
+#### **On macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r hf_deploy/requirements.txt
+```
+
+#### **Download the Model:**
+Ensure your optimized model `.pth` file is placed in `hf_deploy/models/sign_idd.pth`.
+
+#### **Run the Backend:**
+```bash
+cd hf_deploy
+uvicorn backend.main:app --port 8000 --reload
+```
+*The backend is now live at `http://localhost:8000`.*
+
+---
+
+### Step 4: Setup the Frontend (Next.js)
+
+Open a new terminal window:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to see it in action.
+*The website is now live at `http://localhost:3000`.*
 
 ---
 
-## 🧠 Cloud Inference Engine (Sign-IDD)
+## 🛠️ Model Optimization (The "Shrink" Strategy)
 
-Unlike simple video lookup systems, SignBridge uses **A-GPS (Sign-IDD)** to generate *new* motion.
+To deploy a heavy **1.14 GB PyTorch model** on free-tier cloud hosting (Hugging Face / Vercel), we implemented a custom optimization pipeline:
 
-### How it works:
-1.  **Text-to-Gloss**: English text is mapped to GSL glosses (e.g., "Today rainy" -> "HEUTE REGEN").
-2.  **Cloud Diffusion**: The request hits the [Hugging Face Space](https://huggingface.co/spaces/Harshit2907/sign-idd-inference).
-3.  **Optimized Sampling**: The cloud engine runs 20-50 steps of DDIM sampling using **Half-Precision (float16)** weights for 2x faster results.
-4.  **Instant Streaming**: The backend generates and returns a web-optimized MP4 video representing the sign's fluidity.
+1.  **Optimizer Stripping:** Removed training-only metadata and Adam optimizer states (Saved ~300MB).
+2.  **Quantization (FP16):** Converted 32-bit weights to 16-bit half-precision (Saved ~400MB).
+3.  **Async Loading:** Implemented a Singleton threading pattern to prevent "cold start" API timeouts.
 
----
-
-## 🛠️ Deployment & Model Optimization
-
-To fit the **1.14 GB** model into Hugging Face's **1 GB** limit, we performed several optimizations:
-
-1.  **Weight Stripping**: Removed 300MB+ of training-only "luggage" (optimizer states, gradients, schedulers).
-2.  **Half-Precision (FP16)**: Converted 32-bit weights to 16-bit, reducing the size to **442 MB** without losing visual fidelity.
-3.  **Containerization**: Built a custom `Dockerfile` with FFmpeg and OpenCV for cloud-native video rendering.
-
-### Deploying the Cloud Engine:
-If you modify the backend logic in `hf_deploy/`, redeploy with:
-```bash
-cd hf_deploy
-git add .
-git commit -m "Update backend engine"
-git push origin main
-```
+Final Deployment Size: **442 MB** (61% reduction).
 
 ---
 
-## 🛠️ Local Development (Optional)
-If you wish to run the backend locally:
-1.  Navigate to `hf_deploy/`.
-2.  Install requirements: `pip install -r requirements.txt`.
-3.  Run: `uvicorn backend.main:app --port 8000`.
-4.  Update `frontend/components/features/TextToSignClient.tsx` to point to `localhost:8000`.
+## 📊 Dataset & Research Attribution
 
----
-
-## 📊 Dataset Attribution
-This project is built using the **PHOENIX-2014-T** dataset and the **Sign-IDD (Ankita et al.)** diffusion architecture.
+- **Dataset:** [PHOENIX-2014-T](https://www-i6.informatik.rwth-aachen.de/~koller/RWTH-PHOENIX-2014-T/) — German Sign Language Weather Broadcasts.
+- **Architecture:** Based on the **Sign-IDD** research paper (Ankita et al.).
+- **Vocabulary:** 1,089 unique sign language tokens reconstructed for this implementation.
 
 ---
 
 ## 📄 License
-Refer to the individual service directories for specific licensing details.
+
+This project is for academic and research purposes. Please refer to the specific licenses in the `frontend/` and `hf_deploy/` subdirectories for third-party library details.
+
+---
+
+**Developed with ❤️ by Harshit (2026)**
+*"Empowering the world through accessible AI."*
