@@ -66,15 +66,25 @@ export function Header() {
       {/* Right Side Actions - Absolute Positioned to match layout */}
       <div className="absolute top-4 right-6 pointer-events-auto hidden md:block">
         {user ? (
-          <PillButton
-            label="Sign Out"
-            onClick={handleSignOut}
-            className="font-semibold shadow-lg text-sm"
-            baseColor="#18181b"
-            hoverColor="#dc2626"
-            textColor="#e4e4e7"
-            hoverTextColor="#ffffff"
-          />
+          <div className="flex items-center gap-3">
+            {user.user_metadata?.avatar_url && (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt={user.user_metadata?.full_name || "Profile"}
+                className="w-10 h-10 rounded-full border-2 border-white/10 shadow-xl object-cover hover:scale-105 transition-transform duration-300 pointer-events-auto"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <PillButton
+              label="Sign Out"
+              onClick={handleSignOut}
+              className="font-semibold shadow-lg text-sm"
+              baseColor="#18181b"
+              hoverColor="#dc2626"
+              textColor="#e4e4e7"
+              hoverTextColor="#ffffff"
+            />
+          </div>
         ) : (
           <PillButton
             href="/login"
