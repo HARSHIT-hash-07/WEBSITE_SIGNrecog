@@ -46,7 +46,8 @@ export function TextToSignClient() {
     setSkeletons(null);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8001/search?q=${encodeURIComponent(inputText)}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
+      const response = await fetch(`${baseUrl}/search?q=${encodeURIComponent(inputText)}`, {
         method: "GET",
       });
 
@@ -61,7 +62,7 @@ export function TextToSignClient() {
       supabase.from("search_history").insert([{ query: inputText, user_id: user?.id || null }]).then();
     } catch (err) {
       setError(
-        "Something went wrong. Please check if the sign-idd-api is running at http://127.0.0.1:8001",
+        `Something went wrong. Please check if the sign-idd-api is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`,
       );
       console.error(err);
     } finally {
@@ -79,7 +80,8 @@ export function TextToSignClient() {
     setSelectedVideo(null);
 
     try {
-      const response = await fetch(`https://harshit2907-sign-idd-inference.hf.space/translate`, {
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
+      const response = await fetch(`${baseUrl}/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
@@ -103,7 +105,7 @@ export function TextToSignClient() {
       supabase.from("search_history").insert([{ query: `[GEN] ${inputText}`, user_id: user?.id || null }]).then();
     } catch (err: any) {
       setError(
-        `Generative Error: ${err.message}. Ensure SignBridge AI Engine is running at http://127.0.0.1:8000`
+        `Generative Error: ${err.message}. Ensure SignBridge AI Engine is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`
       );
       console.error(err);
     } finally {
@@ -112,7 +114,8 @@ export function TextToSignClient() {
   };
 
   const handleSelectVideo = (videoName: string) => {
-    setSelectedVideo(`http://127.0.0.1:8001/video/${videoName}`);
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
+    setSelectedVideo(`${baseUrl}/video/${videoName}`);
   };
   return (
     <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-200px)]" style={{ minHeight: '500px' }}>

@@ -1,7 +1,16 @@
 import os
+import sys
 from typing import List, Dict
 
-VIDEO_DIR = "test_videos"
+# Try to import config from the parent directory scope
+try:
+    from config import TEST_VIDEOS_DIR
+except ImportError:
+    # Fallback if config is not in sys.path directly
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from config import TEST_VIDEOS_DIR
+
+VIDEO_DIR = TEST_VIDEOS_DIR
 
 def build_video_index() -> Dict[str, str]:
     """
