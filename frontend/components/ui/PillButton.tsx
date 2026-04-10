@@ -126,10 +126,10 @@ export default function PillButton({
 
   // Safe props extraction
   const linkProps = href ? { href } : {};
-  const buttonProps = !href ? { type: "button" as "button", onClick } : {};
+  const buttonProps = !href ? { type: "button" as const, onClick } : {};
 
   return (
-    // @ts-ignore - Dynamic component props are tricky with TS
+    // @ts-expect-error - Dynamic component props are tricky with TS
     <Component
       {...linkProps}
       {...buttonProps}

@@ -8,7 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 export function Header() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<import("@supabase/supabase-js").User | null>(null);
   const router = useRouter();
   const supabase = createClient();
 

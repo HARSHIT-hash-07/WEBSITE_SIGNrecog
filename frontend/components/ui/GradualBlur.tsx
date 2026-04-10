@@ -51,7 +51,7 @@ export default function GradualBlur({
       }
 
       layer.style.backdropFilter = `blur(${blurAmount}px)`;
-      (layer.style as any).WebkitBackdropFilter = `blur(${blurAmount}px)`;
+      layer.style.setProperty("-webkit-backdrop-filter", `blur(${blurAmount}px)`);
     });
   }, [strength, divCount, curve, exponential]);
 
