@@ -34,61 +34,49 @@ def draw_frame_2D(frame, joints):
 
 def render_skeleton_to_video(skeletons, output_path: str, fps: int = 25, mode: str = "standard"):
     """
-    Renders a list of 3D skeletons to an mp4 video with Auto-Scaling.
-    skeletons: A list/array of shape (frames, 50, 3)
-    """
+    Renders skeleton frames to an MP4, using the SAME scaling as the original
+    plot_videos.py: joints * 3 * 240 + offset [350, 250].
     
+    skeletons: list of shape (frames, 50, 3)
+    """
+    import sys as _sys
+    _parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _parent not in _sys.path:
+        _sys.path.insert(0, _parent)
+    from SignIDD_CodeFiles.helpers import getSkeletalModelStructure
+
+    skeleton = np.array(getSkeletalModelStructure())
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (650, 650), True)
 
-    # Convert to numpy for easier manipulation
-    skeletons_np = np.array(skeletons) # (F, 50, 3)
-    
-    # 1. AUTO-SCALING LOGIC
-    # Find the bounding box across all frames to keep scaling consistent
-    all_joints_2d = skeletons_np[:, :, :2] # (F, 50, 2)
-    min_coords = np.min(all_joints_2d, axis=(0, 1))
-    max_coords = np.max(all_joints_2d, axis=(0, 1))
-    center = (min_coords + max_coords) / 2
-    
-    # Calculate scale factor to fit 80% of the 650x650 canvas
-    range_coords = max_coords - min_coords
-    max_range = np.max(range_coords)
-    if max_range < 1e-6: max_range = 1.0 # Avoid div by zero
-    scale = (650 * 0.7) / max_range
+    for skel in skeletons:
+        frame = np.ones((650, 650, 3), np.uint8) * 255
 
-    for i, skel in enumerate(skeletons):
-        frame = np.ones((650, 650, 3), np.uint8) * 245 # Slightly off-white
-        
-        # 2. Apply Auto-Scale and Center
-        joints_2d = (np.array(skel)[:, :2] - center) * scale
-        joints_2d = joints_2d + np.array([325, 325]) # Move to center of canvas
-        
-        # Draw the frame (we pass the pre-scaled joints)
-        draw_frame_2D_v2(frame, joints_2d)
-        
-        label = "Generated Sign: SignBridge HQ" if mode == "hq" else "Generated Sign: Live AI Bridge"
-        cv2.putText(frame, label, (130, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (80, 80, 80), 2)
+        # Exact same pipeline as plot_videos.py draw_frame_2D:
+        #   joints * 3      (undo the /3 normalization from data prep)
+        #   then * 240      (= 10 * 12 * 2, the display scale)
+        #   then + [350, 250]  (center offset)
+        joints_2d = np.array(skel)[:, :2] * 3  # (50, 2)
+        joints_scaled = joints_2d * 240
+        joints_offset = joints_scaled + np.array([350, 250])
+
+        for j in range(skeleton.shape[0]):
+            j1 = joints_offset[skeleton[j, 0]]
+            j2 = joints_offset[skeleton[j, 1]]
+            draw_line(frame, j1, j2, c=(0, 0, 0), t=1, width=2)
+
+        label = "SignBridge HQ" if mode == "hq" else "Live AI Bridge"
+        cv2.putText(frame, label, (230, 630), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (80, 80, 80), 2)
         out.write(frame)
 
     out.release()
-    
-    # Convert to web-compatible h264 using FFmpeg
+
+    # Convert to web-compatible H.264
     tmp_path = output_path.replace(".mp4", "_tmp.mp4")
     if os.path.exists(output_path):
         os.rename(output_path, tmp_path)
         os.system(f"ffmpeg -y -i {tmp_path} -vcodec libx264 -pix_fmt yuv420p -preset fast -crf 22 {output_path} -loglevel quiet")
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
-    
-    return output_path
 
-def draw_frame_2D_v2(frame, joints_scaled):
-    """Specific version that takes ALREADY scaled joints to avoid double scaling."""
-    from SignIDD_CodeFiles.helpers import getSkeletalModelStructure
-    skeleton = np.array(getSkeletalModelStructure())
-    
-    for j in range(skeleton.shape[0]):
-        joint1 = joints_scaled[skeleton[j, 0]]
-        joint2 = joints_scaled[skeleton[j, 1]]
-        draw_line(frame, joint1, joint2, c=(40, 40, 40), t=1, width=2)
+    return output_path
