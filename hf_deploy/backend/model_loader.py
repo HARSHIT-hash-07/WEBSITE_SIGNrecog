@@ -45,11 +45,31 @@ class SignModel:
         threading.Thread(target=self._load_model_async, daemon=True).start()
 
     def _load_model_async(self):
-        """
-        Loads the model weights into memory.
-        """
         try:
-            # We use the inference engine we just built
+            # 1. Ensure weight directory exists
+            os.makedirs(MODEL_ROOT, exist_ok=True)
+            weight_path = os.path.join(MODEL_ROOT, "best.ckpt")
+
+            # 2. Check if weights need to be downloaded
+            if not os.path.exists(weight_path):
+                print(f"Standard Weights not found at {weight_path}. Attempting download from Hub...")
+                from huggingface_hub import hf_hub_download
+                
+                repo_id = os.environ.get("HF_REPO_ID_HQ", "Harshit2907/SignBridge-Weights")
+                token = os.environ.get("HF_TOKEN")
+                
+                print(f"Downloading Standard Weights from {repo_id}...")
+                downloaded_file = hf_hub_download(
+                    repo_id=repo_id,
+                    filename="standard.ckpt", # Expected filename on Hub for standard model
+                    local_dir=MODEL_ROOT,
+                    token=token
+                )
+                # Rename the downloaded standard.ckpt to best.ckpt so the original engine finds it
+                os.rename(downloaded_file, weight_path)
+                print(f"✅ Standard Download complete: {weight_path}")
+
+            # 3. Initialize the inference engine
             self.engine = SignBridgeInference(MODEL_ROOT)
             self.is_loaded = True
             print("✅ SignBridge Model loaded and ready for inference.")
