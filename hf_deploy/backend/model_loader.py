@@ -69,8 +69,8 @@ class SignModel:
         
         try:
             # Run the translation!
-            # We use 20 sampling steps for a good balance of speed and quality on M2
-            skeletons = self.engine.translate(text, sampling_steps=20)
+            # We use 100 sampling steps (max training timesteps) for absolute max fidelity
+            skeletons = self.engine.translate(text, sampling_steps=100)
             
             import uuid
             from video_renderer import render_skeleton_to_video
