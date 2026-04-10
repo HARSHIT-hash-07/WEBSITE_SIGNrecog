@@ -13,7 +13,7 @@ interface VideoEntry {
 
 export function TextToSignClient() {
   const [inputText, setInputText] = useState("");
-  const [mode, setMode] = useState<"search" | "generate">("search");
+  const [mode, setMode] = useState<"search" | "generate" | "generate_hq">("search");
   const [loading, setLoading] = useState(false);
   const [generativeLoading, setGenerativeLoading] = useState(false);
   const [results, setResults] = useState<VideoEntry[]>([]);
@@ -35,6 +35,11 @@ export function TextToSignClient() {
 
     if (mode === "generate") {
       await handleGenerate();
+      return;
+    }
+    
+    if (mode === "generate_hq") {
+      await handleGenerateHQ();
       return;
     }
 
@@ -114,6 +119,50 @@ export function TextToSignClient() {
     }
   };
 
+  const handleGenerateHQ = async () => {
+    if (!inputText.trim()) return;
+
+    setGenerativeLoading(true);
+    setError(null);
+    setHasSearched(true);
+    setSkeletons(null);
+    setSelectedVideo(null);
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
+      const response = await fetch(`${baseUrl}/translate_hq`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: inputText }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({ detail: "HQ Translation service error" }));
+        throw new Error(errData.detail || "Failed to generate HQ sign language.");
+      }
+
+      const data = await response.json();
+      if (data.video_url) {
+        setSelectedVideo(data.video_url);
+        setSkeletons(null);
+      } else {
+        setSkeletons(data.skeletons);
+      }
+      setProcessedText(data.text_processed);
+      
+      // Log generation for history
+      supabase.from("search_history").insert([{ query: `[HQ-GEN] ${inputText}`, user_id: user?.id || null }]).then();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(
+        `HQ Generative Error: ${errorMessage}. Ensure SignBridge AI Engine (HQ) is running.`
+      );
+      console.error(err);
+    } finally {
+      setGenerativeLoading(false);
+    }
+  };
+
   const handleSelectVideo = (videoName: string) => {
     const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
     setSelectedVideo(`${baseUrl}/video/${videoName}`);
@@ -139,6 +188,13 @@ export function TextToSignClient() {
                 <Sparkles className="w-3 h-3" />
                 Live AI Bridge
               </button>
+              <button 
+                onClick={() => setMode("generate_hq")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${mode === "generate_hq" ? "bg-amber-600 text-white shadow-lg" : "text-zinc-500 hover:text-zinc-300"}`}
+              >
+                <div className="w-3 h-3 flex items-center justify-center">🚀</div>
+                AI Bridge HQ
+              </button>
             </div>
           </div>
           
@@ -147,7 +203,11 @@ export function TextToSignClient() {
               <input
                 type="text"
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-input rounded-md px-4 py-3 text-base text-slate-900 dark:text-slate-50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-ring/50"
-                placeholder={mode === "search" ? "Search for topics..." : "Type anything to translate to sign..."}
+                placeholder={
+                  mode === "search" ? "Search for topics..." : 
+                  mode === "generate_hq" ? "Type for High Fidelity translation..." : 
+                  "Type anything to translate to sign..."
+                }
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -160,7 +220,7 @@ export function TextToSignClient() {
               className="py-3 px-6 h-auto"
             >
               {mode === "search" ? <Search className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              {mode === "search" ? "Search" : "Generate"}
+              {mode === "search" ? "Search" : mode === "generate_hq" ? "Generate HQ" : "Generate"}
             </Button>
           </div>
 
@@ -178,7 +238,7 @@ export function TextToSignClient() {
                 {mode === "search" ? (
                   hasSearched ? (loading ? "Searching..." : `Results (${results.length})`) : "Common Topics"
                 ) : (
-                  hasSearched ? (generativeLoading ? "Generating Path..." : "AI Generated Stream") : "Dictionary Overview"
+                  hasSearched ? (generativeLoading ? "Generating Path..." : mode === "generate_hq" ? "High Fidelity AI Stream" : "AI Generated Stream") : "Dictionary Overview"
                 )}
               </h3>
             </div>
@@ -252,6 +312,12 @@ export function TextToSignClient() {
                         ))}
                         <span className="px-2 py-1 rounded bg-zinc-800 text-[10px] opacity-50">+ 1000 more...</span>
                       </div>
+                      {mode === "generate_hq" && (
+                        <div className="mt-6 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                           <p className="text-[10px] text-amber-400 font-bold uppercase mb-1">HQ Mode Active</p>
+                           <p className="text-zinc-400 text-xs">Using 1.1GB high-fidelity weights with motion restoration.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -290,15 +356,23 @@ export function TextToSignClient() {
             ) : (
               <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-500 max-w-sm mx-auto">
                 <div className="w-16 h-16 rounded-full bg-zinc-900/50 flex items-center justify-center mb-4 border border-zinc-800">
-                  {mode === "generate" ? <Sparkles className="w-6 h-6 opacity-50 text-purple-400" /> : <Play className="w-6 h-6 ml-1 opacity-50" />}
+                  {mode === "generate" ? (
+                    <Sparkles className="w-6 h-6 opacity-50 text-purple-400" />
+                  ) : mode === "generate_hq" ? (
+                    <div className="text-2xl opacity-50">🚀</div>
+                  ) : (
+                    <Play className="w-6 h-6 ml-1 opacity-50" />
+                  )}
                 </div>
                 <p className="text-zinc-300 font-medium mb-2">
-                  {mode === "generate" ? "Ready to Generate" : "No Video Selected"}
+                  {mode === "search" ? "No Video Selected" : "Ready to Generate"}
                 </p>
                 <p className="text-sm">
-                  {mode === "generate" 
-                    ? "Type your message and click 'Generate' to see the AI diffusion model create a 3D sign language stream."
-                    : "Search for a topic and select a video from the results to play the sign language animation."}
+                  {mode === "search" 
+                    ? "Search for a topic and select a video from the results to play the sign language animation."
+                    : mode === "generate_hq"
+                    ? "Type your message and click 'Generate HQ' to see the High Fidelity AI model create a 3D motion sign stream."
+                    : "Type your message and click 'Generate' to see the AI diffusion model create a 3D sign language stream."}
                 </p>
               </div>
             )}

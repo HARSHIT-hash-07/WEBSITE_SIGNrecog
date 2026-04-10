@@ -7,3 +7,4 @@ pyyaml>=6.0.1
 opencv-python-headless>=4.8.1.78
 python-dotenv
 requests
+huggingface-hub

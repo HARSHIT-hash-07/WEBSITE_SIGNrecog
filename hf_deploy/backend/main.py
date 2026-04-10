@@ -8,8 +8,10 @@ if BACKEND_DIR not in sys.path:
 
 try:
     from .model_loader import SignModel
+    from .model_loader_hq import sign_model_hq
 except (ImportError, ValueError):
     from model_loader import SignModel
+    from model_loader_hq import sign_model_hq
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -59,6 +61,17 @@ async def root():
 async def translate_text(request: TranslationRequest):
     try:
         result = model.inference(request.text)
+        return {
+            "skeletons": result.get("skeletons", []),
+            "video_url": result.get("video_url"),
+            "text_processed": request.text
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/translate_hq", response_model=TranslationResponse)
+async def translate_text_hq(request: TranslationRequest):
+    try:
+        result = sign_model_hq.inference(request.text)
         return {
             "skeletons": result.get("skeletons", []),
             "video_url": result.get("video_url"),
