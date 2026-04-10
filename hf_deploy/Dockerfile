@@ -32,7 +32,7 @@ WORKDIR /app
 # We'll use /tmp if /app/backend/output is not writable, 
 # but let's try to make it work here.
 USER root
-RUN mkdir -p /app/backend/output && chmod 777 /app/backend/output
+RUN mkdir -p /app/backend/output /app/weights_hq && chmod -R 777 /app/backend/output /app/weights_hq
 USER user
 
 # Set the port (Hugging Face default is 7860)
