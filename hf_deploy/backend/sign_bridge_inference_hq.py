@@ -9,11 +9,12 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.append(CURRENT_DIR)
 
+import yaml
 try:
-    from .sign_bridge_inference import SignBridgeInference
+    from .sign_bridge_inference import SignBridgeInference, PROJECT_ROOT
     from .constants import BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
 except (ImportError, ValueError):
-    from sign_bridge_inference import SignBridgeInference
+    from sign_bridge_inference import SignBridgeInference, PROJECT_ROOT
     from constants import BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
 
 class SignBridgeInferenceHQ(SignBridgeInference):
@@ -21,6 +22,22 @@ class SignBridgeInferenceHQ(SignBridgeInference):
     High Fidelity version of the SignBridge Inference Engine.
     Uses original uncompressed weights and a 'HQ Sampler' tuned for motion.
     """
+    def __init__(self, model_root: str, device: str = None):
+        super().__init__(model_root, device)
+        # Override with HQ specific config
+        self.config_path = os.path.join(PROJECT_ROOT, "model_configs", "Sign-IDD-HQ.yaml")
+        
+        # Reload model with the CORRECT HQ config
+        with open(self.config_path, "r") as f:
+            self.cfg = yaml.safe_load(f)
+            
+        print(f"HQ Engine: Reloaded with High Fidelity Config: {self.config_path}")
+        # Note: We don't necessarily need to rebuild the model if arch is identical,
+        # but the diffusion hyperparameters (timesteps) in the config are critical for ddim_sample.
+        # Let's update the model's diffusion settings directly
+        if hasattr(self.model, 'ACD'):
+             self.model.ACD.num_timesteps = self.cfg['model']['diffusion']['timesteps']
+             self.model.ACD.sampling_timesteps = self.cfg['model']['diffusion']['sampling_timesteps']
     
     def translate(self, text: str, sampling_steps: int = 90) -> List[List[List[float]]]:
         """

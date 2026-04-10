@@ -102,7 +102,7 @@ class SignModel:
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, filename)
             
-            render_skeleton_to_video(skeletons, output_path)
+            render_skeleton_to_video(skeletons, output_path, mode="standard")
             
             video_url = f"https://harshit2907-sign-idd-inference.hf.space/static/{filename}"
             

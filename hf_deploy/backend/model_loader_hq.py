@@ -100,7 +100,7 @@ class SignModelHQ:
             output_path = os.path.join(output_dir, filename)
             
             # Use standard renderer (stable)
-            render_skeleton_to_video(skeletons, output_path)
+            render_skeleton_to_video(skeletons, output_path, mode="hq")
             
             # URL resolution (assumes same static mount)
             video_url = f"https://harshit2907-sign-idd-inference.hf.space/static/{filename}"
