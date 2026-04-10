@@ -8,7 +8,10 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.append(CURRENT_DIR)
 
-from sign_bridge_inference import SignBridgeInference
+try:
+    from .sign_bridge_inference import SignBridgeInference
+except (ImportError, ValueError):
+    from sign_bridge_inference import SignBridgeInference
 
 # For Hugging Face Spaces / Docker, we'll store weights in a local weights directory
 MODEL_ROOT = os.path.join(os.path.dirname(CURRENT_DIR), "weights")

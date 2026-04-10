@@ -1,10 +1,16 @@
 import sys
 import os
-# Add current directory to path
-sys.path.append(os.getcwd())
+# Add backend directory to sys.path to resolve imports in both Docker and Local runs
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if BACKEND_DIR not in sys.path:
+    sys.path.append(BACKEND_DIR)
+
+try:
+    from .main import app
+except (ImportError, ValueError):
+    from main import app
 
 from fastapi.testclient import TestClient
-from main import app
 
 client = TestClient(app)
 

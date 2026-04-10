@@ -1,8 +1,20 @@
+import sys
+import os
+
+# Add backend directory to sys.path to resolve imports in both Docker and Local runs
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if BACKEND_DIR not in sys.path:
+    sys.path.append(BACKEND_DIR)
+
+try:
+    from .model_loader import SignModel
+except (ImportError, ValueError):
+    from model_loader import SignModel
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from model_loader import SignModel
 
 app = FastAPI(title="SignBridge API", version="1.0.0")
 
