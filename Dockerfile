@@ -20,7 +20,8 @@ COPY hf_deploy/ .
 # Create a non-root user (Hugging Face Space requirement)
 RUN useradd -m -u 1000 user
 USER root
-RUN mkdir -p /app/backend/output /app/weights_hq && chmod -R 777 /app/backend/output /app/weights_hq
+RUN mkdir -p /app/backend/output /app/weights_hq /app/weights && \
+    chmod -R 777 /app/backend/output /app/weights_hq /app/weights
 USER user
 
 ENV HOME=/home/user \
