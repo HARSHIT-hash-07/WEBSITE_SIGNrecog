@@ -11,8 +11,10 @@ if CURRENT_DIR not in sys.path:
 
 try:
     from .sign_bridge_inference import SignBridgeInference
+    from .constants import BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
 except (ImportError, ValueError):
     from sign_bridge_inference import SignBridgeInference
+    from constants import BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
 
 class SignBridgeInferenceHQ(SignBridgeInference):
     """
@@ -29,12 +31,12 @@ class SignBridgeInferenceHQ(SignBridgeInference):
              return []
 
         # Map glosses to indices
-        tokens = [self.bos_token] + glosses + [self.eos_token]
+        tokens = [BOS_TOKEN] + glosses + [EOS_TOKEN]
         indices = [self.vocab.stoi[t] for t in tokens]
         
         dev = self.device
         src_tensor = torch.tensor([indices], dtype=torch.long, device=dev)
-        src_mask = (src_tensor != self.vocab.stoi[self.pad_token]).unsqueeze(1).unsqueeze(2)
+        src_mask = (src_tensor != self.vocab.stoi[PAD_TOKEN]).unsqueeze(1).unsqueeze(2)
         src_lengths = torch.tensor([len(indices)], dtype=torch.long, device=dev)
 
         # 1. Encode source
