@@ -71,9 +71,8 @@ class SignModel:
         print(f"Inference Request: '{text}'")
         
         try:
-            # Run the translation!
-            # We use 100 sampling steps (max training timesteps) for absolute max fidelity
-            skeletons = self.engine.translate(text, sampling_steps=100)
+            # we use 60 sampling steps (tuned to prevent over-smoothing which caused stillness at 100)
+            skeletons = self.engine.translate(text, sampling_steps=60)
             
             import uuid
             from video_renderer import render_skeleton_to_video
