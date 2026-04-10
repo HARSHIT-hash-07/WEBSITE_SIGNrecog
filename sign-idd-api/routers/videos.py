@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
-from schemas.response import VideoListResponse, SearchResponse, VideoEntry
+from schemas.response import VideoListResponse, SearchResponse
 from utils.index import get_all_videos, search_videos, get_video_path
 
 router = APIRouter()

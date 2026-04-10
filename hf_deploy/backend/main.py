@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from .model_loader import SignModel
+from model_loader import SignModel
 
 app = FastAPI(title="SignBridge API", version="1.0.0")
 

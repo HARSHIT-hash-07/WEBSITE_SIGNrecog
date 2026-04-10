@@ -2,11 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import videos
 from utils.index import load_index
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_index()
+    yield
 
 app = FastAPI(
     title="Sign-IDD API",
     description="API to serve pre-generated sign language videos from the Sign-IDD model",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -16,9 +23,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-@app.on_event("startup")
-async def startup():
-    load_index()
 
 app.include_router(videos.router)
 

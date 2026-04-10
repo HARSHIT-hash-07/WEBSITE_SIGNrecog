@@ -8,7 +8,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.append(CURRENT_DIR)
 
-from .sign_bridge_inference import SignBridgeInference
+from sign_bridge_inference import SignBridgeInference
 
 # For Hugging Face Spaces / Docker, we'll store weights in a local weights directory
 MODEL_ROOT = os.path.join(os.path.dirname(CURRENT_DIR), "weights")
@@ -73,7 +73,7 @@ class SignModel:
             skeletons = self.engine.translate(text, sampling_steps=20)
             
             import uuid
-            from .video_renderer import render_skeleton_to_video
+            from video_renderer import render_skeleton_to_video
             
             filename = f"gen_{uuid.uuid4().hex[:8]}.mp4"
             output_dir = os.path.join(CURRENT_DIR, "output")
