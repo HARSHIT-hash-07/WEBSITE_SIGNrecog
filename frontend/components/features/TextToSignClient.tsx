@@ -22,7 +22,7 @@ export function TextToSignClient() {
   const [skeletons, setSkeletons] = useState<number[][][] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [processedText, setProcessedText] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<import("@supabase/supabase-js").User | null>(null);
 
   const supabase = createClient();
 
@@ -103,9 +103,10 @@ export function TextToSignClient() {
       
       // Log generation for history
       supabase.from("search_history").insert([{ query: `[GEN] ${inputText}`, user_id: user?.id || null }]).then();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       setError(
-        `Generative Error: ${err.message}. Ensure SignBridge AI Engine is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`
+        `Generative Error: ${errorMessage}. Ensure SignBridge AI Engine is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`
       );
       console.error(err);
     } finally {
@@ -309,9 +310,14 @@ export function TextToSignClient() {
                 <Button 
                   onClick={async () => {
                     if (!user) { alert("Please login to save favorites!"); return; }
-                    const videoName = selectedVideo.split("/video/")[1];
+                    let videoName = selectedVideo;
+                    if (selectedVideo.includes("/video/")) videoName = selectedVideo.split("/video/")[1];
+                    else if (selectedVideo.includes("/static/")) videoName = selectedVideo.split("/static/")[1];
+                    else videoName = selectedVideo.split("/").pop() || selectedVideo;
+                    
                     const { error } = await supabase.from("favorites").insert([{ video_name: videoName, user_id: user.id }]);
                     if (error) {
+                      console.error("Supabase error:", error);
                       if (error.code === '23505') alert("Already in favorites!");
                       else alert("Error saving favorite");
                     } else {
@@ -329,14 +335,34 @@ export function TextToSignClient() {
                 <Button 
                   size="icon" 
                   className="bg-zinc-800 hover:bg-green-600/20 text-zinc-400 hover:text-green-400 border border-zinc-700"
-                  onClick={() => supabase.from("feedback").insert([{ video_name: selectedVideo.split("/video/")[1], user_id: user?.id || null, is_positive: true }]).then(() => alert("Thanks for your feedback!"))}
+                  onClick={() => {
+                    let videoName = selectedVideo;
+                    if (selectedVideo.includes("/video/")) videoName = selectedVideo.split("/video/")[1];
+                    else if (selectedVideo.includes("/static/")) videoName = selectedVideo.split("/static/")[1];
+                    else videoName = selectedVideo.split("/").pop() || selectedVideo;
+                    
+                    supabase.from("feedback").insert([{ video_name: videoName, user_id: user?.id || null, is_positive: true }]).then(({ error }) => {
+                      if (error) console.error("Feedback error:", error);
+                      else alert("Thanks for your feedback!");
+                    });
+                  }}
                 >
                   <ThumbsUp className="w-4 h-4" />
                 </Button>
                 <Button 
                   size="icon" 
                   className="bg-zinc-800 hover:bg-red-600/20 text-zinc-400 hover:text-red-400 border border-zinc-700"
-                  onClick={() => supabase.from("feedback").insert([{ video_name: selectedVideo.split("/video/")[1], user_id: user?.id || null, is_positive: false }]).then(() => alert("Thanks for your feedback!"))}
+                  onClick={() => {
+                    let videoName = selectedVideo;
+                    if (selectedVideo.includes("/video/")) videoName = selectedVideo.split("/video/")[1];
+                    else if (selectedVideo.includes("/static/")) videoName = selectedVideo.split("/static/")[1];
+                    else videoName = selectedVideo.split("/").pop() || selectedVideo;
+                    
+                    supabase.from("feedback").insert([{ video_name: videoName, user_id: user?.id || null, is_positive: false }]).then(({ error }) => {
+                      if (error) console.error("Feedback error:", error);
+                      else alert("Thanks for your feedback!");
+                    });
+                  }}
                 >
                   <ThumbsDown className="w-4 h-4" />
                 </Button>
