@@ -56,7 +56,7 @@ class SignModelHQ:
                 print(f"HQ Weights not found at {weight_path}. Attempting download from Hub...")
                 from huggingface_hub import hf_hub_download
                 
-                repo_id = os.environ.get("HF_REPO_ID_HQ", "Harshit2907/SignBridge-Weights")
+                repo_id = os.environ.get("HF_REPO_ID_HQ", "ExploWebsite/SignBridge-Weights")
                 token = os.environ.get("HF_TOKEN") # Optional: needed if repo is private
                 
                 print(f"Downloading HQ Weights from {repo_id}...")
@@ -103,7 +103,7 @@ class SignModelHQ:
             render_skeleton_to_video(skeletons, output_path, mode="hq")
             
             # URL resolution (assumes same static mount)
-            video_url = f"https://harshit2907-sign-idd-inference.hf.space/static/{filename}"
+            video_url = f"https://explowebsite-sign-idd-inference.hf.space/static/{filename}"
             if os.environ.get("LOCAL_DEV"):
                  video_url = f"http://127.0.0.1:8001/static/{filename}"
 

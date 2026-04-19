@@ -55,7 +55,7 @@ class SignModel:
                 print(f"Standard Weights not found at {weight_path}. Attempting download from Hub...")
                 from huggingface_hub import hf_hub_download
                 
-                repo_id = os.environ.get("HF_REPO_ID_HQ", "Harshit2907/SignBridge-Weights")
+                repo_id = os.environ.get("HF_REPO_ID_HQ", "ExploWebsite/SignBridge-Weights")
                 token = os.environ.get("HF_TOKEN")
                 
                 print(f"Downloading Standard Weights from {repo_id}...")
@@ -104,7 +104,7 @@ class SignModel:
             
             render_skeleton_to_video(skeletons, output_path, mode="standard")
             
-            video_url = f"https://harshit2907-sign-idd-inference.hf.space/static/{filename}"
+            video_url = f"https://explowebsite-sign-idd-inference.hf.space/static/{filename}"
             
             return {
                 "skeletons": None,
