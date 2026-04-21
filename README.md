@@ -1,6 +1,6 @@
 
 
-# SignBridge: AI-Powered Sign Language Translation Platform 🌍🤟
+# SignBridge: AI-Powered Sign Language Translation Platform
 
 **SignBridge** is a high-performance, end-to-end platform designed to bridge the communication gap for the Deaf and hard-of-hearing community.
 
