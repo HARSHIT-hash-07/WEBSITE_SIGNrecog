@@ -104,7 +104,8 @@ class SignModel:
             
             render_skeleton_to_video(skeletons, output_path, mode="standard")
             
-            video_url = f"https://explowebsite-sign-idd-inference.hf.space/static/{filename}"
+            space_base_url = os.environ.get("HF_SPACE_URL", "https://explowebsite-sign-idd-inference.hf.space")
+            video_url = f"{space_base_url}/static/{filename}"
             
             return {
                 "skeletons": None,

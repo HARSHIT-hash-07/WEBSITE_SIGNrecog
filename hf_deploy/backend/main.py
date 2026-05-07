@@ -57,6 +57,14 @@ class TranslationResponse(BaseModel):
 async def root():
     return {"message": "SignBridge AI API is running"}
 
+@app.get("/health")
+async def health():
+    return {
+        "status": "ready" if model.is_loaded else "loading",
+        "model_loaded": model.is_loaded,
+        "error": model._load_error
+    }
+
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
     try:

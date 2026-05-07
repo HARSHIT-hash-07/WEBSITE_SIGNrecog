@@ -21,6 +21,8 @@ export function TextToSignClient() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [skeletons, setSkeletons] = useState<number[][][] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warmingUp, setWarmingUp] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [processedText, setProcessedText] = useState("");
   const [user, setUser] = useState<import("@supabase/supabase-js").User | null>(null);
 
@@ -75,18 +77,70 @@ export function TextToSignClient() {
     }
   };
 
+  const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        // Check model health before first translate call
+        if (attempt === 0) {
+          try {
+            const healthRes = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(8000) });
+            if (healthRes.ok) {
+              const health = await healthRes.json();
+              if (health.status === "loading") {
+                setWarmingUp(true);
+              }
+            }
+          } catch {
+            // Health check failed — space may be starting, try anyway
+          }
+        }
+
+        const res = await fetch(url, { ...options, signal: AbortSignal.timeout(60000) });
+
+        if (res.status === 500) {
+          const errData = await res.json().catch(() => ({ detail: "" }));
+          const detail = errData.detail || "";
+          if (detail.includes("still loading") && attempt < maxRetries) {
+            setWarmingUp(true);
+            setRetryCount(attempt + 1);
+            await new Promise(r => setTimeout(r, (attempt + 1) * 8000));
+            continue;
+          }
+          throw new Error(detail || "Translation service error");
+        }
+
+        setWarmingUp(false);
+        return res;
+      } catch (err: unknown) {
+        if (attempt === maxRetries) throw err;
+        const isTimeout = err instanceof Error && (err.name === "TimeoutError" || err.message.includes("timeout"));
+        if (isTimeout || (err instanceof TypeError && err.message.includes("fetch"))) {
+          setWarmingUp(true);
+          setRetryCount(attempt + 1);
+          await new Promise(r => setTimeout(r, (attempt + 1) * 8000));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error("Max retries exceeded");
+  };
+
   const handleGenerate = async () => {
     if (!inputText.trim()) return;
 
     setGenerativeLoading(true);
     setError(null);
+    setWarmingUp(false);
+    setRetryCount(0);
     setHasSearched(true);
     setSkeletons(null);
     setSelectedVideo(null);
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
-      const response = await fetch(`${baseUrl}/translate`, {
+      const response = await fetchWithRetry(`${baseUrl}/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
@@ -111,11 +165,14 @@ export function TextToSignClient() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(
-        `Generative Error: ${errorMessage}. Ensure SignBridge AI Engine is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`
+        errorMessage.includes("still loading")
+          ? "The AI Engine is warming up. Please wait 30 seconds and try again."
+          : `Generative Error: ${errorMessage}. Check that the SignBridge AI Engine is running at ${process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001"}`
       );
       console.error(err);
     } finally {
       setGenerativeLoading(false);
+      setWarmingUp(false);
     }
   };
 
@@ -124,13 +181,15 @@ export function TextToSignClient() {
 
     setGenerativeLoading(true);
     setError(null);
+    setWarmingUp(false);
+    setRetryCount(0);
     setHasSearched(true);
     setSkeletons(null);
     setSelectedVideo(null);
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8001";
-      const response = await fetch(`${baseUrl}/translate_hq`, {
+      const response = await fetchWithRetry(`${baseUrl}/translate_hq`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
@@ -155,11 +214,14 @@ export function TextToSignClient() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(
-        `HQ Generative Error: ${errorMessage}. Ensure SignBridge AI Engine (HQ) is running.`
+        errorMessage.includes("still loading")
+          ? "The HQ AI Engine is warming up. Please wait 30 seconds and try again."
+          : `HQ Generative Error: ${errorMessage}. Ensure SignBridge AI Engine (HQ) is running.`
       );
       console.error(err);
     } finally {
       setGenerativeLoading(false);
+      setWarmingUp(false);
     }
   };
 
@@ -223,6 +285,19 @@ export function TextToSignClient() {
               {mode === "search" ? "Search" : mode === "generate_hq" ? "Generate HQ" : "Generate"}
             </Button>
           </div>
+
+          {warmingUp && !error && (
+            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-md text-sm flex items-start gap-3">
+              <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
+              <div>
+                <p className="font-semibold">AI Engine is warming up…</p>
+                <p className="text-xs mt-1 opacity-80">
+                  {retryCount > 0 ? `Retrying (attempt ${retryCount}/3) — ` : ""}
+                  The model loads in the background. This usually takes 30–60 seconds on first request.
+                </p>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-md text-sm flex items-start gap-3">
