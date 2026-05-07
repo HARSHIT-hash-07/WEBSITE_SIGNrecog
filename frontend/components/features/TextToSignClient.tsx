@@ -28,6 +28,13 @@ export function TextToSignClient() {
 
   const supabase = createClient();
 
+  // Fix broken video URLs from the API - the HF Space may return an old/wrong domain
+  const fixVideoUrl = (url: string): string => {
+    const correctBase = process.env.NEXT_PUBLIC_BACKEND_URL || "https://explowebsite-sign-idd-inference.hf.space";
+    // Rewrite any *.hf.space/static/* URL to use the correct space
+    return url.replace(/https?:\/\/[^/]+-sign-idd-inference\.hf\.space/, correctBase);
+  };
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
@@ -153,7 +160,7 @@ export function TextToSignClient() {
 
       const data = await response.json();
       if (data.video_url) {
-        setSelectedVideo(data.video_url);
+        setSelectedVideo(fixVideoUrl(data.video_url));
         setSkeletons(null);
       } else {
         setSkeletons(data.skeletons);
@@ -202,7 +209,7 @@ export function TextToSignClient() {
 
       const data = await response.json();
       if (data.video_url) {
-        setSelectedVideo(data.video_url);
+        setSelectedVideo(fixVideoUrl(data.video_url));
         setSkeletons(null);
       } else {
         setSkeletons(data.skeletons);
